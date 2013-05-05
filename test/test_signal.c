@@ -6,12 +6,12 @@
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
     of the License, or (at your option) any later version.
-    
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -29,7 +29,7 @@ static void on_properties_changed (GDBusProxy          *proxy,
                                 const gchar* const  *invalidated_properties,
                                 gpointer             user_data)
 {
-    /* 
+    /*
      * Note that we are guaranteed that changed_properties and
      * invalidated_properties are never NULL
      */
@@ -83,7 +83,10 @@ int main(int argc, char **argv)
     GError *error;
     GDBusProxy *proxy;
 
-    g_type_init ();
+#if GLIB_VERSION_CUR_STABLE < GLIB_VERSION_2_36
+    /* g_type_init is deprecated after 2.36 */
+    g_type_init();
+#endif
 
     loop = NULL;
     proxy = NULL;
@@ -119,5 +122,5 @@ int main(int argc, char **argv)
         g_object_unref (proxy);
     if (loop != NULL)
         g_main_loop_unref (loop);
-    return 0; 
+    return 0;
 }
