@@ -34,11 +34,11 @@ static gint mpris_v2_enable = 1;
 static DB_mpris_server_v2 *srv_v2 = NULL;
 
 static GThread *server_thread_id = NULL;
-static GMainLoop  *mpris_main_loop = NULL;
+static GMutex server_thread_mutex;
+static GCond server_thread_cond;
 
 static gpointer server_thread(gpointer data)
 {
-    mpris_main_loop = g_main_loop_new(NULL, FALSE);
     if(mpris_v1_enable == 1){
         debug("MPRIS V1 Starting...");
         DB_mpris_server_start_v1(&srv_v1);
@@ -47,19 +47,17 @@ static gpointer server_thread(gpointer data)
         debug("MPRIS V2 Starting...");
         DB_mpris_server_start_v2(&srv_v2);
     }
-    g_main_loop_run(mpris_main_loop);
+    g_cond_wait(&server_thread_cond, &server_thread_mutex);
     return NULL;
 }
 
 
 static gint mpris_start() 
 {
-    if(!g_thread_supported()){
-        g_thread_init(NULL);
-        debug("Init the thread...");
-    }
     GError *err = NULL;
-    server_thread_id = g_thread_create(server_thread, NULL, FALSE, &err);
+    g_mutex_init(&server_thread_mutex);
+    g_cond_init(&server_thread_cond);
+    server_thread_id = g_thread_new("mpris_server_thread", server_thread, NULL);
     if(server_thread_id == NULL){
         debug("Create MPRIS thread error. %d:%s", err -> code, err -> message);
         g_error_free(err);
@@ -77,7 +75,7 @@ static gint mpris_stop()
     if(mpris_v2_enable == 1){
         DB_mpris_server_stop_v2(srv_v2);
     }
-    g_main_loop_quit(mpris_main_loop);
+    g_cond_signal(&server_thread_cond);
     return 0;
 }
 
