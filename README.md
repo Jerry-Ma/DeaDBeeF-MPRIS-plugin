@@ -1,0 +1,2 @@
+DeaDBeeF-MPRIS-plugin
+=====================
