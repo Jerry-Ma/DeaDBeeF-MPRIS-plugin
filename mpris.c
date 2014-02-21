@@ -6,12 +6,12 @@
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
     of the License, or (at your option) any later version.
-    
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -28,7 +28,7 @@
 
 DB_functions_t *deadbeef;
 
-static gint mpris_v1_enable = 1;
+static gint mpris_v1_enable = 0;
 static DB_mpris_server_v1 *srv_v1 = NULL;
 static gint mpris_v2_enable = 1;
 static DB_mpris_server_v2 *srv_v2 = NULL;
@@ -52,7 +52,7 @@ static gpointer server_thread(gpointer data)
 }
 
 
-static gint mpris_start() 
+static gint mpris_start()
 {
     GError *err = NULL;
     g_mutex_init(&server_thread_mutex);
@@ -66,8 +66,8 @@ static gint mpris_start()
     return 0;
 }
 
-static gint mpris_stop() 
-{    
+static gint mpris_stop()
+{
     debug("MPRIS Stoped....");
     if(mpris_v1_enable == 1){
         DB_mpris_server_stop_v1(srv_v1);
@@ -96,9 +96,9 @@ static void mpris_restart()
     }
 }
 
-static gint mpris_message (uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) 
+static gint mpris_message (uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2)
 {
-    ddb_event_playpos_t *pp = NULL; 
+    ddb_event_playpos_t *pp = NULL;
 
     switch(id)
     {
@@ -150,7 +150,7 @@ DB_plugin_t plugin = {
     .id = "mpris",
     .name ="MPRIS v1 and v2 plugin",
     .descr = "Communicate with other applications using D-Bus.",
-    .copyright = 
+    .copyright =
         "Copyright (C) 2009-2011 HuangCongyu <huangcongyu2006@gmail.com>\n"
         "\n"
         "This program is free software; you can redistribute it and/or\n"
@@ -176,7 +176,7 @@ DB_plugin_t plugin = {
     .message = mpris_message,
 };
 
-DB_plugin_t * mpris_load (DB_functions_t *ddb) 
+DB_plugin_t * mpris_load (DB_functions_t *ddb)
 {
     debug("Load...");
     deadbeef = ddb;

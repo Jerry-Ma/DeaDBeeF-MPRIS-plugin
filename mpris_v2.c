@@ -322,10 +322,20 @@ static GVariant *handle_player_get_property(GDBusConnection *connection,
     }else if(g_strcmp0(property_name, "Metadata") == 0){
         ret = get_metadata_v2(-1);
     }else if(g_strcmp0(property_name, "Volume") == 0){
-        float min_vol = deadbeef -> volume_get_min_db();
-        float volume = deadbeef -> volume_get_db() - min_vol;
+        float db_vol = deadbeef -> volume_get_db();
+        float volume = (-2.0 * db_vol + 100.0) / 100.0;
+        if(volume > 1.0)
+        {
+            volume = 1.0;
+        }
+        if(volume < 0.0)
+        {
+            volume = 0.0;
+        }
+        /*debug("Get DB: %f", db_vol);*/
+        /*debug("Get Min_DB: %f", min_db_vol);*/
         debug("Get Volume: %f", volume);
-        ret =  g_variant_new("(d)" , volume / ( - min_vol) * 100);
+        ret =  g_variant_new("(d)" , volume );
     }else if(g_strcmp0(property_name, "Position") == 0){
         DB_playItem_t *track = NULL;
         track = deadbeef -> streamer_get_playing_track();
@@ -387,10 +397,13 @@ static gboolean handle_player_set_property(GDBusConnection  *connection,
     }else if(g_strcmp0(property_name, "Volume") == 0){
         double volume = 0;
         g_variant_get(value, "d", &volume);
-        if(volume > 100.0){
-            volume = 100.0;
+        if(volume > 1.0){
+            volume = 1.0;
         }
-        float vol_f = 50 - ((float)volume / 100.0 * 50.0);
+        if(volume < 0.0){
+            volume = 0.0;
+        }
+        float vol_f = (100.0 - (float)(volume * 100.0))/2.0;
         debug("Set Volume: %f %f", volume, vol_f);
         deadbeef -> volume_set_db(-vol_f);
     }
@@ -612,23 +625,6 @@ static void on_bus_acquired (GDBusConnection *connection,
                                  gpointer user_data)
 {
     GError *err = NULL;
-    //The /Player object implemets org.freedesktop.MediaPalyer interface
-    server -> player_reg_id = g_dbus_connection_register_object(
-                            connection
-                            , MPRIS_V2_PATH
-                            , server -> introspection_data_player -> interfaces[0]
-                            , &player_vtable
-                            , NULL      /* user_data */
-                            , NULL      /* user_data_free_func */
-                            , &err);     /* GError** */
-    if(server -> player_reg_id == 0){
-        debug("ERROR! Unable register interface %s on dbus. %s\n"
-                            ,MPRIS_V2_INTERFACE_PLAYER , err -> message);
-        DB_mpris_server_stop_v2(server);
-        g_error_free(err);
-        return;
-    }
-
     //The / object implemets org.freedesktop.MediaPalyer interface
     server -> root_reg_id = g_dbus_connection_register_object(
                             connection
@@ -643,6 +639,22 @@ static void on_bus_acquired (GDBusConnection *connection,
                             , MPRIS_V2_INTERFACE_ROOT, err -> message);
         g_error_free(err);
         DB_mpris_server_stop_v2(server);
+        return;
+    }
+    //The /Player object implemets org.freedesktop.MediaPalyer interface
+    server -> player_reg_id = g_dbus_connection_register_object(
+                            connection
+                            , MPRIS_V2_PATH
+                            , server -> introspection_data_player -> interfaces[0]
+                            , &player_vtable
+                            , NULL      /* user_data */
+                            , NULL      /* user_data_free_func */
+                            , &err);     /* GError** */
+    if(server -> player_reg_id == 0){
+        debug("ERROR! Unable register interface %s on dbus. %s\n"
+                            ,MPRIS_V2_INTERFACE_PLAYER , err -> message);
+        DB_mpris_server_stop_v2(server);
+        g_error_free(err);
         return;
     }
 
