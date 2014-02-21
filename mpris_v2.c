@@ -181,8 +181,17 @@ static void handle_player_method_call(GDBusConnection *connection,
 
     //PlayPause
     if(g_strcmp0(method_name, MPRIS_METHOD_PLAYPAUSE) == 0){
+        DB_output_t *output = deadbeef -> get_output();
+        /*
+         * issue 2
+         * I don't know why get_output will return NULL on his computer.
+         * I can not reproduce this bug...
+         */
         g_dbus_method_invocation_return_value(invocation, NULL);
-        deadbeef -> sendmessage(DB_EV_TOGGLE_PAUSE, 0, 0, 0);
+        if(output == NULL || output -> state() == OUTPUT_STATE_STOPPED)
+            deadbeef -> sendmessage(DB_EV_PLAY_CURRENT, 0, 0, 0);
+        else
+            deadbeef -> sendmessage(DB_EV_TOGGLE_PAUSE, 0, 0, 0);
         goto go_return;
     }
 
